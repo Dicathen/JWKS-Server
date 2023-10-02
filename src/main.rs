@@ -70,7 +70,6 @@ struct Jwks {
     keys: Vec<Jwk>,
 }
 
-
 async fn jwks_endpoint() -> HttpResponse {
     // Create a JSON Web Key (JWK)
     let (kid, private_key, public_key) = generate_rsa_key1();
@@ -92,6 +91,17 @@ async fn jwks_endpoint() -> HttpResponse {
         .body(serde_json::to_string(&jwks).unwrap())
 }
 
+fn generate_rsa_key1() -> (String,RsaPrivateKey, RsaPublicKey) {
+    let bits = 2048; // Adjust the key size as needed
+
+    let mut rng = rand::thread_rng();
+    let private_key = RsaPrivateKey::new(&mut rng ,bits).expect("failed to generate a key");
+    let public_key = RsaPublicKey::from(&private_key);
+
+    let kid = format!("rsa-key-{}", bits);
+    (kid, private_key, public_key)
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let unexpired_key: Key = Key::new();
@@ -105,15 +115,4 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-
-fn generate_rsa_key1() -> (String,RsaPrivateKey, RsaPublicKey) {
-    let bits = 2048; // Adjust the key size as needed
-
-    let mut rng = rand::thread_rng();
-    let private_key = RsaPrivateKey::new(&mut rng ,bits).expect("failed to generate a key");
-    let public_key = RsaPublicKey::from(&private_key);
-
-    let kid = format!("rsa-key-{}", bits);
-    (kid, private_key, public_key)
-}
 
