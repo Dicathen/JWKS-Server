@@ -1,13 +1,12 @@
-use actix_web::{web, App, HttpResponse, HttpServer, HttpRequest};
-use serde::{Serialize, Deserialize};
-use rsa::{RsaPrivateKey, RsaPublicKey};
-use rsa::traits::PublicKeyParts;
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use chrono::prelude::*;
-use jsonwebtoken::{encode, Header, EncodingKey, Algorithm};
+use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use jwt_simple::prelude::*;
-
+use rsa::traits::PublicKeyParts;
+use rsa::{RsaPrivateKey, RsaPublicKey};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 struct Jwk {
@@ -22,8 +21,8 @@ struct Jwk {
 struct Key {
     private_key: RsaPrivateKey,
     public_key: RsaPublicKey,
-    kid : String,
-    expiry : i64,
+    kid: String,
+    expiry: i64,
 }
 
 trait KeyTrait {
@@ -36,7 +35,7 @@ impl KeyTrait for Key {
         let bits = 2048; // Adjust the key size as needed
 
         let mut rng = rand::thread_rng();
-        let private_key = RsaPrivateKey::new(&mut rng ,bits).expect("failed to generate a key");
+        let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
         let public_key = RsaPublicKey::from(&private_key);
 
         let kid = format!("rsa-key-{}", bits);
@@ -52,7 +51,7 @@ impl KeyTrait for Key {
         let bits = 2048; // Adjust the key size as needed
 
         let mut rng = rand::thread_rng();
-        let private_key = RsaPrivateKey::new(&mut rng ,bits).expect("failed to generate a key");
+        let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
         let public_key = RsaPublicKey::from(&private_key);
 
         let kid = format!("rsa-key-{}", bits);
@@ -91,11 +90,11 @@ async fn jwks_endpoint() -> HttpResponse {
         .body(serde_json::to_string(&jwks).unwrap())
 }
 
-fn generate_rsa_key1() -> (String,RsaPrivateKey, RsaPublicKey) {
+fn generate_rsa_key1() -> (String, RsaPrivateKey, RsaPublicKey) {
     let bits = 2048; // Adjust the key size as needed
 
     let mut rng = rand::thread_rng();
-    let private_key = RsaPrivateKey::new(&mut rng ,bits).expect("failed to generate a key");
+    let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
     let public_key = RsaPublicKey::from(&private_key);
 
     let kid = format!("rsa-key-{}", bits);
@@ -106,13 +105,8 @@ fn generate_rsa_key1() -> (String,RsaPrivateKey, RsaPublicKey) {
 async fn main() -> std::io::Result<()> {
     let unexpired_key: Key = Key::new();
     let expired_key: Key = Key::new_expired();
-    HttpServer::new(|| {
-        App::new()
-            .route("/.well-known/jwks.json", web::get().to(jwks_endpoint))
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+    HttpServer::new(|| App::new().route("/.well-known/jwks.json", web::get().to(jwks_endpoint)))
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }
-
-
